@@ -37,11 +37,11 @@ add_library(lab-07-asio-server STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
 )
 
-add_executable(main
+#[[add_executable(main
   ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
-)
+)]]
 
-target_link_libraries(main Boost::log Boost::thread Boost::system)
+#target_link_libraries(main Boost::log Boost::thread Boost::system)
 target_link_libraries(lab-07-asio-server  Boost::log Boost::thread Boost::system)
 
 target_include_directories(lab-07-asio-server  PUBLIC
@@ -49,7 +49,7 @@ target_include_directories(lab-07-asio-server  PUBLIC
   "$<INSTALL_INTERFACE:include>"
 )
 
-target_link_libraries(main lab-07-asio-server)
+#target_link_libraries(main lab-07-asio-server)
 
 if(BUILD_TESTS)
   add_executable(tests
@@ -82,7 +82,7 @@ endif()
 
 include(CPackConfig.cmake)
 
-install(TARGETS ${PROJECT_NAME} main
+install(TARGETS ${PROJECT_NAME}
   EXPORT "${PROJECT_NAME}-targets"
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
