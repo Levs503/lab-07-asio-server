@@ -48,8 +48,10 @@ std::string GetAllUsers() {
   return ret;
 }
 
+unsigned short port = 8001;
+
 void accept_thread() {
-  tcp::acceptor acceptor{service, tcp::endpoint{tcp::v4(), 8001}};
+  tcp::acceptor acceptor{service, tcp::endpoint{tcp::v4(), port}};
   while (true) {
     BOOST_LOG_TRIVIAL(info)
         << "starting \n Thread id: " << std::this_thread::get_id() << "\n";
@@ -93,7 +95,17 @@ void handle_clients_thread() {
   }
 }
 
-int main(/*int argc, char* argv[]*/) {
+int main(int argc, char* argv[]) {
+  if(argc<2) {
+    BOOST_LOG_TRIVIAL(error) << "Missing parameter" << ::std::endl;
+    return 1;
+  }
+  try {
+    port = std::stoi(argv[1]);
+  } catch (std::exception& e) {
+    BOOST_LOG_TRIVIAL(error) << "Error " << e.what() << ::std::endl;
+    return 1;
+  }
   boost::thread_group threads;
   threads.create_thread(accept_thread);
   threads.create_thread(handle_clients_thread);
