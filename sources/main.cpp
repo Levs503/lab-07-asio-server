@@ -96,7 +96,7 @@ void handle_clients_thread() {
 }
 
 int main(int argc, char* argv[]) {
-  if(argc<2) {
+  if (argc < 2) {
     BOOST_LOG_TRIVIAL(error) << "Missing parameter" << ::std::endl;
     return 1;
   }
