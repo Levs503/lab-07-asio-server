@@ -55,10 +55,7 @@ void accept_thread() {
         << "starting \n Thread id: " << std::this_thread::get_id() << "\n";
 
     auto client = std::make_shared<talk_to_client>();
-    std::cout << "READDY" << std::endl;
     acceptor.accept(client->GetSocket());
-    BOOST_LOG_TRIVIAL(info) << "Logging failed \n Thread id: \n"
-                            << std::this_thread::get_id() << "\n";
     std::string name;
     client->GetSocket().read_some(boost::asio::buffer(name));
     if (name.empty()) {
