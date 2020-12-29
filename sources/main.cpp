@@ -54,25 +54,11 @@ void accept_thread() {
   tcp::acceptor acceptor{service, tcp::endpoint{tcp::v4(), port}};
   while (true) {
     BOOST_LOG_TRIVIAL(info)
-        << "starting \n Thread id: " << std::this_thread::get_id() << "\n";
+        << "starting wait \n Thread id: " << std::this_thread::get_id() << "\n";
 
     auto client = std::make_shared<talk_to_client>();
     acceptor.accept(client->GetSocket());
-    std::string name;
-    client->GetSocket().read_some(boost::asio::buffer(name));
-    if (name.empty()) {
-      client->GetSocket().write_some(
-          boost::asio::buffer("logging failed\n", 20));
 
-      BOOST_LOG_TRIVIAL(info) << "Logging failed \n Thread id: \n"
-                              << std::this_thread::get_id() << "\n";
-    } else {
-      client->SetName(name);
-      client->GetSocket().write_some(
-          (boost::asio::buffer("success logging \n")));
-      BOOST_LOG_TRIVIAL(info) << "Success logging \n username \n"
-                              << name << "\n";
-    }
     boost::recursive_mutex::scoped_lock lock{mutex};
     clients.push_back(client);
   }
@@ -83,28 +69,51 @@ void handle_clients_thread() {
     boost::this_thread::sleep(boost::posix_time::millisec(1));
     boost::recursive_mutex::scoped_lock lock{mutex};
     for (auto& client : clients) {
-      std::string com;
-      client->GetSocket().read_some(boost::asio::buffer(com, 256));
-      if (com == "client_list_chaned") {
-        client->GetSocket().write_some(boost::asio::buffer(GetAllUsers()));
+      if(client->GetSocket().available()) {
+        std::string com;
+        boost::asio::streambuf buffer;
+        boost::asio::read_until(client->GetSocket(), buffer, '\n');
+        std::cout<<client->GetSocket().available();
+        std::istream input(&buffer);
+        std::getline(input, com);
+        if (com == "client_list") {
+          client->GetSocket().write_some(boost::asio::buffer(GetAllUsers()));
+          client->GetSocket().write_some(boost::asio::buffer("Ping Ok\n"));
+          BOOST_LOG_TRIVIAL(info)
+              << "Answered to client \n username: " << client->GetName()
+              << "\n";
+        } else if (com == "Ping") {
+          client->GetSocket().write_some(boost::asio::buffer("Ping Ok\n"));
+          BOOST_LOG_TRIVIAL(info)
+              << "Answered to client \n username: " << client->GetName()
+              << "\n";
+        } else if (com.empty()) {
+          client->GetSocket().write_some(
+              boost::asio::buffer("logging failed\n", 20));
+
+          BOOST_LOG_TRIVIAL(info) << "Logging failed \n Thread id: \n"
+                                  << std::this_thread::get_id() << "\n";
+        } else {
+          client->SetName(com);
+          client->GetSocket().write_some(
+              (boost::asio::buffer("success logging \n")));
+          BOOST_LOG_TRIVIAL(info)
+              << "Success logging \n username " << com << "\n";
+        }
       }
-      client->GetSocket().write_some(boost::asio::buffer("Ping Ok\n"));
-      BOOST_LOG_TRIVIAL(info)
-          << "Answered to client \n username: " << client->GetName() << "\n";
+
     }
   }
 }
 
 int main(int argc, char* argv[]) {
-  if (argc < 2) {
-    BOOST_LOG_TRIVIAL(error) << "Missing parameter" << ::std::endl;
-    return 1;
-  }
-  try {
-    port = std::stoi(argv[1]);
-  } catch (std::exception& e) {
-    BOOST_LOG_TRIVIAL(error) << "Error " << e.what() << ::std::endl;
-    return 1;
+  if (argc >1) {
+    try {
+      port = std::stoi(argv[1]);
+    } catch (std::exception& e) {
+      BOOST_LOG_TRIVIAL(error) << "Error " << e.what() << ::std::endl;
+      return 1;
+    }
   }
   boost::thread_group threads;
   threads.create_thread(accept_thread);
