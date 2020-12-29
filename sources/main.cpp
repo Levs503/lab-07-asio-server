@@ -69,11 +69,11 @@ void handle_clients_thread() {
     boost::this_thread::sleep(boost::posix_time::millisec(1));
     boost::recursive_mutex::scoped_lock lock{mutex};
     for (auto& client : clients) {
-      if(client->GetSocket().available()) {
+      if (client->GetSocket().available()) {
         std::string com;
         boost::asio::streambuf buffer;
         boost::asio::read_until(client->GetSocket(), buffer, '\n');
-        std::cout<<client->GetSocket().available();
+        std::cout << client->GetSocket().available();
         std::istream input(&buffer);
         std::getline(input, com);
         if (com == "client_list") {
@@ -101,13 +101,12 @@ void handle_clients_thread() {
               << "Success logging \n username " << com << "\n";
         }
       }
-
     }
   }
 }
 
 int main(int argc, char* argv[]) {
-  if (argc >1) {
+  if (argc > 1) {
     try {
       port = std::stoi(argv[1]);
     } catch (std::exception& e) {
