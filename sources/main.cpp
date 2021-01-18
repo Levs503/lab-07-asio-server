@@ -40,6 +40,8 @@ class talk_to_client {
 
   talk_to_client()
       : socket(service), create_time(std::chrono::system_clock::now()) {}
+
+  ~talk_to_client() { socket.close(); }
 };
 
 std::vector<std::shared_ptr<talk_to_client>> clients;
@@ -71,10 +73,11 @@ void accept_thread() {
 
 void handle_clients_thread() {
   while (true) {
-    boost::this_thread::sleep(boost::posix_time::millisec(10));
+    boost::this_thread::sleep(boost::posix_time::millisec(50));
     boost::recursive_mutex::scoped_lock lock{mutex};
     for (auto& client : clients) {
       if (client->GetSocket().available()) {
+        client->UpdateTime();
         std::string com;
         boost::asio::streambuf buffer;
         boost::asio::read_until(client->GetSocket(), buffer, '\n');
@@ -82,7 +85,7 @@ void handle_clients_thread() {
         std::getline(input, com);
         if (com == "client_list") {
           client->GetSocket().write_some(boost::asio::buffer(GetAllUsers()));
-          client->GetSocket().write_some(boost::asio::buffer("Ping Ok\n"));
+          // client->GetSocket().write_some(boost::asio::buffer("Ping Ok\n"));
           BOOST_LOG_TRIVIAL(info)
               << "Answered to client  username: " << client->GetName() << "\n";
         } else if (com == "Ping") {
@@ -99,7 +102,7 @@ void handle_clients_thread() {
         } else {
           client->SetName(com);
           client->GetSocket().write_some(
-              (boost::asio::buffer("success logging \n")));
+              (boost::asio::buffer("success logging\n")));
           BOOST_LOG_TRIVIAL(info) << "Success logging username " << com << "\n";
         }
       }
